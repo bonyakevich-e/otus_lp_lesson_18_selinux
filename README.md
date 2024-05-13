@@ -170,3 +170,22 @@ May 13 13:00:15 selinux nginx[25863]: nginx: configuration file /etc/nginx/nginx
 May 13 13:00:15 selinux systemd[1]: Started The nginx HTTP and reverse proxy server.
 ```
 Видим что nginx работает.
+
+После добавления модуля nginx запустился без ошибок. При использовании модуля изменения сохранятся после перезагрузки.
+
+Удалить модуль:
+```
+[root@selinux vagrant]# semodule -r nginx
+libsemanage.semanage_direct_remove_key: Removing last nginx module (no other nginx module exists at another priority).
+```
+Посмотреть установленные модули:
+```
+[root@selinux vagrant]# semodule -l
+abrt	1.4.1
+accountsd	1.1.0
+acct	1.6.0
+afs	1.9.0
+aiccu	1.1.0
+aide	1.7.1
+...
+```
