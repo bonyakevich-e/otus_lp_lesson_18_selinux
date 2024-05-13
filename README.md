@@ -5,8 +5,6 @@
 - переключатели setsebool;
 - добавление нестандартного порта в имеющийся тип;
 - формирование и установка модуля SELinux.
-К сдаче:
-- README с описанием каждого решения (скриншоты и демонстрация приветствуются). 
 
 2. Обеспечить работоспособность приложения при включенном selinux:
 - развернуть приложенный стенд https://github.com/mbfx/otus-linux-adm/tree/master/selinux_dns_problems; 
@@ -35,7 +33,7 @@ May 13 05:32:48 selinux nginx[4667]: nginx: the configuration file /etc/nginx/ng
 May 13 05:32:48 selinux nginx[4667]: nginx: [emerg] bind() to 0.0.0.0:4881 failed (13: Permission denied)
 May 13 05:32:48 selinux nginx[4667]: nginx: configuration file /etc/nginx/nginx.conf test failed
 ```
-Видим что nginx не запустился по причине "Permission denied", потому что он пытается запуститься на порту 4881, но Selinux это запрущает
+Видим что nginx не запустился по причине "Permission denied", потому что он пытается запуститься на порту 4881, но Selinux это запрещает
 
 Решить это можно несколькими способами.
 
@@ -246,7 +244,7 @@ drw-rwx---. root named unconfined_u:object_r:etc_t:s0   dynamic
 -rw-rw----. root named system_u:object_r:etc_t:s0       named.newdns.lab
 ```
 > [!IMPORTANT]
-> Проблема заключается в том, что конфигурационные файлы зон лежат не в /var/named/, а в /etc/named. Для /etc/named/ установлен контекст etc_t. А политикой SELinux заперещены действия сервиса named с контекстом > named_t над каталогом с контекстом etc_t. Решение - изменить контекст каталога /etc/named на корректный.
+> Проблема заключается в том, что конфигурационные файлы зон лежат не в /var/named/, а в /etc/named. Для /etc/named/ установлен контекст etc_t. А политикой SELinux заперещены действия сервиса named с контекстом named_t над каталогом с контекстом etc_t. Решение - изменить контекст каталога /etc/named на корректный.
 
 Смотрим какой контекст у каталога с зонами по умолчанию:
 ```
@@ -270,6 +268,8 @@ drw-rwx---. root named unconfined_u:object_r:named_zone_t:s0 dynamic
 Попробуем снова внести изменения с клиента. Видим, что все работает:
 ![Screenshot from 2024-05-13 19-36-26](https://github.com/bonyakevich-e/otus_lp_lesson_18_selinux/assets/114911797/c9f6edf1-78db-4808-9eb1-c48c0e531e7b)
 ![Screenshot from 2024-05-13 19-37-49](https://github.com/bonyakevich-e/otus_lp_lesson_18_selinux/assets/114911797/c38bb1d6-5770-4d7d-8db1-efde7336f7df)
+![Screenshot from 2024-05-13 19-44-59](https://github.com/bonyakevich-e/otus_lp_lesson_18_selinux/assets/114911797/a51aa9ca-d3a2-4b4c-a467-ba1834b75af0)
+
 
 Для того, чтобы вернуть правила обратно, можно ввести команду:
 ```
