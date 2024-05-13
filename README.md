@@ -1,4 +1,4 @@
-### OTUS Linux Professional Lesson #15 | Subject: SELinux
+### OTUS Linux Professional Lesson #18 | Subject: SELinux
 #### ЦЕЛЬ ДЗ: Диагностировать проблемы и модифицировать политики SELinux для корректной работы приложений, если это требуется
 #### ОПИСАНИЕ ДЗ:
 1. Запустить nginx на нестандартном порту 3-мя разными способами:
