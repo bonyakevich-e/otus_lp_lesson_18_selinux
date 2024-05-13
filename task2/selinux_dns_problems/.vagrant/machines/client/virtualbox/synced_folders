@@ -1,0 +1,1 @@
+{"rsync":{"/vagrant":{"type":"rsync","guestpath":"/vagrant","hostpath":"/home/itbn/LinuxProff/lp_lesson_18_selinux_task2/selinux_dns_problems","disabled":false,"__vagrantfile":true,"owner":"vagrant","group":"vagrant"}}}
