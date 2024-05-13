@@ -214,4 +214,66 @@ vagrant up
 update failed: SERVFAIL
 > quit
 ```
-Как видим, изменения внести не получилось
+Как видим, изменения внести не получилось.
+
+Смотрим логи SELinux на клиенте:
+```
+[root@client ~]# cat /var/log/audit/audit.log | audit2why
+```
+Пусто.
+
+Смотрим логи SELinux на сервере:
+```
+[root@ns01 vagrant]# cat /var/log/audit/audit.log | audit2why
+type=AVC msg=audit(1715608488.544:2949): avc:  denied  { create } for  pid=6970 comm="isc-worker0000" name="named.ddns.lab.view1.jnl" scontext=system_u:system_r:named_t:s0 tcontext=system_u:object_r:etc_t:s0 tclass=file permissive=0
+
+	Was caused by:
+		Missing type enforcement (TE) allow rule.
+
+		You can use audit2allow to generate a loadable module to allow this access.
+```
+Ошибка в контексте безопасности. Вместо типа named_t используется тип etc_t.
+
+Посмотрим в каталог /etc/named:
+```
+[root@ns01 vagrant]# ll -aZ /etc/named
+drw-rwx---. root named system_u:object_r:etc_t:s0       .
+drwxr-xr-x. root root  system_u:object_r:etc_t:s0       ..
+drw-rwx---. root named unconfined_u:object_r:etc_t:s0   dynamic
+-rw-rw----. root named system_u:object_r:etc_t:s0       named.50.168.192.rev
+-rw-rw----. root named system_u:object_r:etc_t:s0       named.dns.lab
+-rw-rw----. root named system_u:object_r:etc_t:s0       named.dns.lab.view1
+-rw-rw----. root named system_u:object_r:etc_t:s0       named.newdns.lab
+```
+> [!IMPORTANT]
+> Проблема заключается в том, что конфигурационные файлы зон лежат не в /var/named/, а в /etc/named. Для /etc/named/ установлен контекст etc_t. А политикой SELinux заперещены действия сервиса named с контекстом > named_t над каталогом с контекстом etc_t. Решение - изменить контекст каталога /etc/named на корректный.
+
+Смотрим какой контекст у каталога с зонами по умолчанию:
+```
+[root@ns01 vagrant]# semanage fcontext -l | grep named
+... 
+/var/named(/.*)?                                   all files          system_u:object_r:__named_zone_t__:s0 
+...
+```
+Меняем контекс каталога /etc/named на named_zone_t:
+```
+[root@ns01 vagrant]# chcon -R -t named_zone_t /etc/named
+[root@ns01 vagrant]# ls -laZ /etc/named
+drw-rwx---. root named system_u:object_r:named_zone_t:s0 .
+drwxr-xr-x. root root  system_u:object_r:etc_t:s0       ..
+drw-rwx---. root named unconfined_u:object_r:named_zone_t:s0 dynamic
+-rw-rw----. root named system_u:object_r:named_zone_t:s0 named.50.168.192.rev
+-rw-rw----. root named system_u:object_r:named_zone_t:s0 named.dns.lab
+-rw-rw----. root named system_u:object_r:named_zone_t:s0 named.dns.lab.view1
+-rw-rw----. root named system_u:object_r:named_zone_t:s0 named.newdns.lab
+```
+Попробуем снова внести изменения с клиента. Видим, что все работает:
+![Screenshot from 2024-05-13 19-36-26](https://github.com/bonyakevich-e/otus_lp_lesson_18_selinux/assets/114911797/c9f6edf1-78db-4808-9eb1-c48c0e531e7b)
+![Screenshot from 2024-05-13 19-37-49](https://github.com/bonyakevich-e/otus_lp_lesson_18_selinux/assets/114911797/c38bb1d6-5770-4d7d-8db1-efde7336f7df)
+
+Для того, чтобы вернуть правила обратно, можно ввести команду:
+```
+[root@ns01 vagrant]# restorecon -v -R /etc/named
+```
+
+
